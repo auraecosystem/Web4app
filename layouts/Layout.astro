@@ -1,6 +1,10 @@
 ---
+// Add this line to your route to ensure it runs on the Edge runtime
+export const config = {
+    runtime: "edge",
+};
 // Get the assets prefix from config
-const assetsPrefix = import.meta.env.ASSETS_PREFIX || import.meta.env.BASE_URL || '';
+const assetsPrefix = import.meta.env.ASSETS_PREFIX || 
 ---
 
 <!doctype html>
