@@ -1,0 +1,141 @@
+---
+// ==============================
+// 🌐 WEB4 CONTEXT STATE
+// ==============================
+
+let state = {
+  app: { name: "Web4 Astro Runtime v2" },
+  user: { name: "Guest", status: "active" },
+  data: { metricA: 42, metricB: 99 },
+  ai: { output: "Loading AI..." },
+  events: []
+};
+
+// ==============================
+// 🤖 AI MOCK (async-ready)
+// ==============================
+
+async function runAI(prompt) {
+  // replace with real API later
+  return `AI → processed: ${prompt}`;
+}
+
+// initial AI load
+state.ai.output = await runAI("initialize system");
+
+// ==============================
+// 🧩 TWIG ENGINE
+// ==============================
+
+function resolve(expr, ctx) {
+  const parts = expr.split(".");
+  let value = ctx[parts[0]];
+
+  for (let i = 1; i < parts.length; i++) {
+    value = value?.[parts[i]];
+  }
+
+  return typeof value === "function" ? value() : value;
+}
+
+function render(template, ctx) {
+  return template.replace(/\{\{\s*(.*?)\s*\}\}/g, (_, expr) => {
+    return resolve(expr.trim(), ctx);
+  });
+}
+
+// ==============================
+// 🧩 TEMPLATE
+// ==============================
+
+const TEMPLATE = `
+<h1>{{ app.name }}</h1>
+
+<section>
+  <h2>User</h2>
+  <p>Name: {{ user.name }}</p>
+  <p>Status: {{ user.status }}</p>
+</section>
+
+<section>
+  <h2>Live Data</h2>
+  <p>Metric A: {{ data.metricA }}</p>
+  <p>Metric B: {{ data.metricB }}</p>
+</section>
+
+<section>
+  <h2>AI Layer</h2>
+  <p id="ai-box">{{ ai.output }}</p>
+</section>
+
+<section>
+  <h2>Event System</h2>
+  <ul id="event-log"></ul>
+</section>
+`;
+
+let output = render(TEMPLATE, state);
+---
+
+<html>
+  <head>
+    <title>{state.app.name}</title>
+  </head>
+
+  <body>
+
+    <div set:html={output} />
+
+    <!-- ============================== -->
+    <!-- ⚡ WEB4 RUNTIME (CLIENT SIDE) -->
+    <!-- ============================== -->
+
+    <script>
+      let state = {
+        metricA: 42,
+        metricB: 99,
+        events: []
+      };
+
+      // ==========================
+      // 🔄 LIVE UPDATE LOOP
+      // ==========================
+
+      setInterval(() => {
+        state.metricA++;
+
+        const aiBox = document.getElementById("ai-box");
+        if (aiBox) {
+          aiBox.innerText = "AI updating... " + state.metricA;
+        }
+      }, 2000);
+
+      // ==========================
+      // ⚡ EVENT SYSTEM
+      // ==========================
+
+      function emitEvent(message) {
+        const event = {
+          time: new Date().toISOString(),
+          message
+        };
+
+        state.events.push(event);
+
+        const list = document.getElementById("event-log");
+
+        if (list) {
+          const item = document.createElement("li");
+          item.innerText = message;
+          list.appendChild(item);
+        }
+      }
+
+      // simulate events
+      setInterval(() => {
+        emitEvent("System heartbeat OK");
+      }, 3000);
+    </script>
+
+  </body>
+</html>
