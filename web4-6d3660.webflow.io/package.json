@@ -1,0 +1,4 @@
+"scripts": {
+    // Existing scripts...
+    "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview", //
+}
