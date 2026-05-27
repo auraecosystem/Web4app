@@ -1,7 +1,5 @@
-Request served by 4d896d95b55478
-
-GET / HTTP/1.1
-
+---
+Requestserved: by 4d896d95b55478 GET /HTTP/1.1
 Host: echo.websocket.org
 Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
 Accept-Encoding: gzip, deflate, br
@@ -23,6 +21,7 @@ X-Forwarded-Port: 443
 X-Forwarded-Proto: https
 X-Forwarded-Ssl: on
 X-Request-Start: t=1779909317414646
+---
 
 ----------------------------------------------------------------------
          __      __   _                 _        _                    
@@ -30,6 +29,10 @@ X-Request-Start: t=1779909317414646
           \ \/\/ / -_) '_ \(_-</ _ \/ _| / / -_)  _|                 
            \_/\_/\___|_.__//__/\___/\__|_\_\___|\__|                 
 
-  WebSocket UI: https://echo.websocket.org/.ws  |  SSE: https://echo.websocket.org/.sse
-  Learn more: https://websocket.org/tools/websocket-echo-server
+[WebSocket UI:](https://echo.websocket.org/.ws) 
+
+[SSE:](https://echo.websocket.org/.sse)
+
+[Learnmore:](https://websocket.org/tools/websocket-echo-server)
+
 ----------------------------------------------------------------------
