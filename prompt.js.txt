@@ -1,0 +1,19 @@
+const session = await LanguageModel.create({
+  initialPrompts: [
+    { role: "system", content: "Predict up to 5 emojis as a response to a comment. Output emojis, comma-separated." },
+    { role: "user", content: "This is amazing!" },
+    { role: "assistant", content: "❤️, ➕" },
+    { role: "user", content: "LGTM" },
+    { role: "assistant", content: "👍, 🚢" }
+  ]
+});
+
+// Clone an existing session for efficiency, instead of recreating one each time.
+async function predictEmoji(comment) {
+  const freshSession = await session.clone();
+  return await freshSession.prompt(comment);
+}
+
+const result1 = await predictEmoji("Back to the drawing board");
+
+const result2 = await predictEmoji("This code is so good you should get promoted");
