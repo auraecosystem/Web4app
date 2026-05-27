@@ -1,0 +1,60 @@
+<html>
+<head>
+  <title>{{ app.name }}</title>
+</head>
+
+<body>
+
+  <h1>{{ app.name }}</h1>
+
+  <!-- ========================= -->
+  <!-- 👤 USER CONTEXT LAYER -->
+  <!-- ========================= -->
+
+  <section>
+    <h2>User</h2>
+    <p>Name: {{ user.name }}</p>
+    <p>Status: {{ user.status }}</p>
+  </section>
+
+  <!-- ========================= -->
+  <!-- 📊 DATA LAYER (API BOUND) -->
+  <!-- ========================= -->
+
+  <section>
+    <h2>Live Data</h2>
+    <p>Metric A: {{ data.metricA }}</p>
+    <p>Metric B: {{ data.metricB }}</p>
+  </section>
+
+  <!-- ========================= -->
+  <!-- 🤖 AI LAYER -->
+  <!-- ========================= -->
+
+  <section>
+    <h2>AI Insight</h2>
+    <p>{{ ai.generate }}</p>
+  </section>
+
+  <!-- ========================= -->
+  <!-- ⚡ EVENT SYSTEM (Web4 CORE) -->
+  <!-- ========================= -->
+
+  {% on event="update" %}
+    <div class="event-box">
+      Update received: {{ event.message }}
+    </div>
+  {% endon %}
+
+  <!-- ========================= -->
+  <!-- 🔄 CONDITIONAL UI -->
+  <!-- ========================= -->
+
+  {% if user.status == "active" %}
+    <p>System fully unlocked</p>
+  {% else %}
+    <p>Limited access mode</p>
+  {% endif %}
+
+</body>
+</html>
