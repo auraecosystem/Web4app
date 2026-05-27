@@ -1,0 +1,49 @@
+// Add this line to your route to ensure it runs on the Edge runtime
+export const config = {
+    runtime: "edge",
+};
+
+import type { APIRoute } from 'astro';
+
+// Sample data
+const users = [
+{ id: 1, name: 'Arthur Dent', email: 'arthur@earth.com' },
+{ id: 2, name: 'Ford Prefect', email: 'ford@betelgeuse.com' },
+{ id: 3, name: 'Zaphod Beeblebrox', email: 'zaphod@heartofgold.com' },
+{ id: 4, name: 'Trillian', email: 'trillian@earth.com' },
+{ id: 5, name: 'Marvin', email: 'marvin@paranoidandroid.com' }
+];
+export const GET: APIRoute = async ({ params, request, context }) => {
+const url = new URL(request.url);
+const id = url.searchParams.get('id');
+
+
+if (id) {
+    const user = users.find(user => user.id === parseInt(id));
+
+    if (!user) {
+    return new Response(JSON.stringify({
+        error: 'User not found'
+    }), {
+        status: 404,
+        headers: {
+        'Content-Type': 'application/json'
+        }
+    });
+    }
+
+    return new Response(JSON.stringify(user), {
+    status: 200,
+    headers: {
+        'Content-Type': 'application/json'
+    }
+    });
+}
+
+return new Response(JSON.stringify(users), {
+    status: 200,
+    headers: {
+    'Content-Type': 'application/json'
+    }
+});
+};
