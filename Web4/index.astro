@@ -1,0 +1,24 @@
+---
+import { web4 } from "../web4/runtime";
+import { render } from "../web4/twig";
+
+const TEMPLATE = `
+<h1>{{ app.name }}</h1>
+<p>User: {{ user.name }}</p>
+<p>Metric: {{ data.metricA }}</p>
+`;
+---
+
+<html>
+  <body>
+    <div set:html={render(TEMPLATE, web4)} />
+
+    <script type="module">
+      import { web4 } from "../web4/runtime.js";
+
+      setInterval(() => {
+        web4.set("data.metricA", Math.random() * 100);
+      }, 2000);
+    </script>
+  </body>
+</html>
