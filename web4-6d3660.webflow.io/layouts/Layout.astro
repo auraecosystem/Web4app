@@ -1,0 +1,57 @@
+---
+// Add this line to your route to ensure it runs on the Edge runtime
+export const config = {
+    runtime: "edge",
+};
+// Get the assets prefix from config
+const assetsPrefix = import.meta.env.ASSETS_PREFIX || import.meta.env.BASE_URL || '';
+Host: echo.websocket.org
+Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
+Accept-Encoding: gzip, deflate, br
+Accept-Language: en-GB,en;q=0.9
+Fly-Client-Ip: 197.210.53.31
+Fly-Forwarded-Port: 443
+Fly-Forwarded-Proto: https
+Fly-Forwarded-Ssl: on
+Fly-Region: jnb
+Fly-Request-Id: 01KSNHGGW7PDTZBCFPHZ8YXXFV-jnb
+Priority: u=0, i
+Sec-Fetch-Dest: document
+Sec-Fetch-Mode: navigate
+Sec-Fetch-Site: none
+User-Agent: Mozilla/5.0 (iPhone; CPU iPhone OS 26_0_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/148.0.7778.166 Mobile/15E148 Safari/604.1
+Via: 2 fly.io, 2 fly.io
+X-Forwarded-For: 197.210.53.31, 66.241.124.119
+X-Forwarded-Port: 443
+X-Forwarded-Proto: https
+X-Forwarded-Ssl: on
+X-Request-Start: t=1779913212807283
+---
+
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width" />
+        <link
+            rel="icon"
+            type="image/svg+xml"
+            // Add assets prefix to asset path
+            href={`${assetsPrefix}/favicon.svg`}
+        />
+        <meta name="generator" content={Astro.generator} />
+        <title>Astro Basics</title>
+    </head>
+    <body>
+        <slot />
+    </body>
+</html>
+
+<style>
+    html,
+    body {
+        margin: 0;
+        width: 100%;
+        height: 100%;
+    }
+</style>
