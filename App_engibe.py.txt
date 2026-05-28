@@ -1,0 +1,121 @@
+import tkinter as tk
+from tkinter import filedialog, scrolledtext
+import markdown
+import webbrowser
+import os
+
+# ==========================================
+# MARKDOWN ENGINE
+# ==========================================
+
+def md_to_html(md_text: str) -> str:
+    return markdown.markdown(md_text, extensions=["fenced_code", "tables"])
+
+# ==========================================
+# SAVE FILE
+# ==========================================
+
+def save_file(content):
+    file_path = filedialog.asksaveasfilename(
+        defaultextension=".html",
+        filetypes=[("HTML File", "*.html")]
+    )
+
+    if file_path:
+        with open(file_path, "w", encoding="utf-8") as f:
+            f.write(content)
+
+        webbrowser.open("file://" + os.path.abspath(file_path))
+
+# ==========================================
+# MAIN APP
+# ==========================================
+
+class MarkGDIYM:
+
+    def __init__(self, root):
+
+        self.root = root
+        self.root.title("MarkGDIYM - Markdown GUI System")
+
+        # INPUT
+        self.input = scrolledtext.ScrolledText(
+            root,
+            width=70,
+            height=20,
+            wrap=tk.WORD
+        )
+        self.input.pack(padx=10, pady=10)
+
+        # BUTTONS
+        frame = tk.Frame(root)
+        frame.pack()
+
+        tk.Button(frame, text="Render", command=self.render).pack(side=tk.LEFT, padx=5)
+        tk.Button(frame, text="Save HTML", command=self.save).pack(side=tk.LEFT, padx=5)
+        tk.Button(frame, text="Load File", command=self.load).pack(side=tk.LEFT, padx=5)
+
+        # OUTPUT
+        self.output = scrolledtext.ScrolledText(
+            root,
+            width=70,
+            height=15,
+            wrap=tk.WORD,
+            bg="#f4f4f4"
+        )
+        self.output.pack(padx=10, pady=10)
+
+    # ======================================
+    # RENDER MARKDOWN
+    # ======================================
+
+    def render(self):
+
+        md_text = self.input.get("1.0", tk.END)
+
+        html = md_to_html(md_text)
+
+        self.output.delete("1.0", tk.END)
+        self.output.insert(tk.END, html)
+
+    # ======================================
+    # SAVE HTML
+    # ======================================
+
+    def save(self):
+
+        md_text = self.input.get("1.0", tk.END)
+
+        html = md_to_html(md_text)
+
+        save_file(html)
+
+    # ======================================
+    # LOAD FILE
+    # ======================================
+
+    def load(self):
+
+        file_path = filedialog.askopenfilename(
+            filetypes=[("Markdown files", "*.md"), ("Text files", "*.txt")]
+        )
+
+        if file_path:
+
+            with open(file_path, "r", encoding="utf-8") as f:
+                content = f.read()
+
+            self.input.delete("1.0", tk.END)
+            self.input.insert(tk.END, content)
+
+# ==========================================
+# RUN APP
+# ==========================================
+
+if __name__ == "__main__":
+
+    root = tk.Tk()
+
+    app = MarkGDIYM(root)
+
+    root.mainloop()
