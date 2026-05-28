@@ -6,7 +6,7 @@
 
 > Configure Claude Code with global and project-level settings, and environment variables.
 
-Claude Code offers a variety of settings to configure its behavior to meet your needs. You can configure Claude Code by running the `/config` command when using the interactive REPL, which opens a tabbed Settings interface where you can view status information and modify configuration options.
+Claude Code offers a variety of settings to configure its behavior to meet your needs. You can configure Claude Code by running the `/config` command when using the interactive REPL, which opens a tabbed Settings interface where you can view it status information and modify configuration options.
 
 ## Configuration scopes
 
@@ -47,7 +47,7 @@ Claude Code uses a **scope system** to determine where configurations apply and 
 * Testing configurations before sharing with the team
 * Machine-specific settings that won't work for others
 
-### How scopes interact
+> ### How scopes interact
 
 When the same setting appears in multiple scopes, Claude Code applies them in priority order:
 
@@ -154,7 +154,7 @@ The `$schema` line in the example above points to the [official JSON schema](htt
 
 The published schema is updated periodically and may not include settings added in the most recent CLI releases, so a validation warning on a recently documented field does not necessarily mean your configuration is invalid.
 
-### When edits take effect
+> ### When edits take effect
 
 Claude Code watches your settings files and reloads them when they change, so edits to most keys apply to the running session without a restart. This includes `permissions`, `hooks`, and credential helpers like `apiKeyHelper`. The reload covers user, project, local, and managed settings, and the [`ConfigChange` hook](/en/hooks#configchange) fires for each detected change.
 
@@ -300,7 +300,7 @@ To copy gitignored files like `.env` into new worktrees, use a [`.worktreeinclud
 | `disableBypassPermissionsMode`      | Set to `"disable"` to prevent `bypassPermissions` mode from being activated. This disables the `--dangerously-skip-permissions` command-line flag. Typically placed in [managed settings](/en/permissions#managed-settings) to enforce organizational policy, but works from any scope                                                                                                                                                                                                                              | `"disable"`                                                            |
 | `skipDangerousModePermissionPrompt` | Skip the confirmation prompt shown before entering bypass permissions mode via `--dangerously-skip-permissions` or `defaultMode: "bypassPermissions"`. Ignored when set in project settings (`.claude/settings.json`) to prevent untrusted repositories from auto-bypassing the prompt                                                                                                                                                                                                                              | `true`                                                                 |
 
-### Permission rule syntax
+> ### Permission rule syntax
 
 Permission rules follow the format `Tool` or `Tool(specifier)`. Rules are evaluated in order: deny rules first, then ask, then allow. The first matching rule wins.
 
@@ -345,7 +345,7 @@ Configure advanced sandboxing behavior. Sandboxing isolates bash commands from y
 | `bwrapPath`                            | (Managed settings only, Linux/WSL2) Absolute path to the bubblewrap (`bwrap`) binary. Overrides automatic detection via `PATH`. Only honored from [managed settings](/en/settings#settings-precedence), not from user or project settings. Useful when `bwrap` is installed at a non-standard location in managed environments.                 | `/opt/admin/bwrap`                |
 | `socatPath`                            | (Managed settings only, Linux/WSL2) Absolute path to the `socat` binary used for the sandbox network proxy. Overrides automatic detection via `PATH`. Only honored from managed settings.                                                                                                                                                       | `/opt/admin/socat`                |
 
-#### Sandbox path prefixes
+> #### Sandbox path prefixes
 
 Paths in `filesystem.allowWrite`, `filesystem.denyWrite`, `filesystem.denyRead`, and `filesystem.allowRead` support these prefixes:
 
