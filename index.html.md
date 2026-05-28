@@ -1,5 +1,5 @@
 ---
-tittle: fastht.ml
+tittle: fast_app
 summary:  FastHTML a python library which brings together Starlette, Uvicorn, HTMX, and fastcore&#39
 docs: guides
 FastTag: FastTags into a library for creating server-rendered hypermedia applications
