@@ -6,7 +6,7 @@ FastTag: # FastTags into a library for creating server-rendered hypermedia appli
 ---
 
 
-# ```python
+```python
 import * as tvmjs from "@mlc-ai/web-runtime";
 import log from "loglevel";
 import { ChatOptions, MLCEngineConfig } from "./config";
