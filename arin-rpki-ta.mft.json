@@ -1,0 +1,21 @@
+{
+	"file": "rpki.arin.net/repository/arin-rpki-ta/arin-rpki-ta.mft",
+	"hash_id": "Vu7t4B1aQ6VoI1TiRrPgwpAfJUvvPTfOH1npwYrAttM=",
+	"type": "manifest",
+	"ski": "B8C2F9359758CA162183E43B1A9EE79A73D196A6",
+	"cert_issuer": "/CN=arin-rpki-ta",
+	"cert_serial": "010D0C9F4328584CE565C08E8BEBC689108B2E00",
+	"aki": "13D4F24F9A9FCD98DB36F930631808C88F3974BC",
+	"aia": "rsync://rpki.arin.net/repository/arin-rpki-ta.cer",
+	"sia": "rsync://rpki.arin.net/repository/arin-rpki-ta/arin-rpki-ta.mft",
+	"manifest_number": "010D0C9F4328584CE565C08E8BEBC689108B2E01",
+	"signing_time": 1771355986,
+	"valid_since": 1771355986,
+	"valid_until": 1792261186,
+	"expires": 1792261186,
+	"filesandhashes": [
+		{ "filename": "5e4a23ea-e80a-403e-b08c-2171da2157d3.cer", "hash": "4i8uyedAGhFAOeGL70DQSBU36OQMZrIY+wFzi2KaZ5c=" },
+		{ "filename": "arin-rpki-ta.crl", "hash": "8ZC1J1yTK4KIx5MxTaYt1Vl5iaOE1el0N/apOLDuSWA=" }
+	],
+	"validation": "OK"
+}
