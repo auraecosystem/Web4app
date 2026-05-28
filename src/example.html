@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Quick and Dirty Testing for Surreal</title>
+		<!-- <script src="https://cdn.jsdelivr.net/gh/gnat/surreal@main/surreal.js"></script> -->
+		<script src="surreal.js"></script>
+		<meta http-equiv="cache-control" content="no-cache" />
+	</head>
+	<body>
+		<!-- Basic examples -->
+		<button>👁️ Click me to fade out and remove.
+			<script>
+				me().on("click", ev => { me(ev).disable(); me(ev).fadeOut() })
+			</script>
+		</button>
+		<button class="invisible">👻 Click me to fade in.
+			<script>
+				me().on("click", ev => {
+					// Simple way to limit number of actions.
+					if(me(ev)?.fadeInLimit <= 1) return; else { me(ev).fadeInLimit = 1; me(ev).fadeIn() }
+				})
+			</script>
+		</button>
+		<div class="yeet noot">I should be red.
+			<script>
+				any(".yeet.noot").classAdd('.active')
+			</script>
+		</div>
+		<!-- Basic async examples -->
+		<div id="random">I should turn grey after 2 seconds.
+			<script>
+				// Basic usage with id. Runs immediately.
+				(async ()=>{
+					me("#random").classAdd('active')
+					await sleep(2000)
+					me("#random").classAdd('inactive')
+				})()
+			</script>
+		</div>
+		<div>I should be animated using events.
+			<script>
+				// Now you're thinking with events!
+				me().on("ping", async ev => {
+					let e = me(ev)
+					e.styles({"background":"hotpink", "color":"purple"})
+					await sleep(1000)
+					e.send("pong")
+				})
+				me().on("pong", async ev => {
+					let e = me(ev)
+					e.styles({"background":"blue", "color":"#002200"})
+					await sleep(1000)
+					e.send("ping")
+				})
+				me().styles({"transition":"all 2s"}).send("pong")
+			</script>
+		</div>
+		<div>I should be animated using timeline / async until finished!
+			<script>
+				// Now you're thinking with async! Runs immediately. No event.
+				(async (e = me()) => { // Special case where we can save element right away.
+					e.styles({"transition": "all 2s"})
+					e.styles({"background":"#0030F7", "color":"#002200"})
+					await sleep(2000)
+					e.styles({"background":"#006BFF", "color":"#000033"})
+					await sleep(2000)
+					e.styles({"background":"#00A1FF", "color":"#005500"})
+					await sleep(2000)
+					e.styles({"background":"#00C08C", "color":"#660033"})
+					await sleep(2000)
+
+					// New element!
+					var e2 = me(createElement("div"))
+					e2.styles({"transition":"all 2s", "opacity":"0", "height":"0%"})
+					e2.innerText = "🔥🔥🔥🔥🔥🔥"
+					e.appendChild(e2)
+					await sleep(1000)
+					e2.styles({"opacity":"1", "height":"fit-content"})
+				})()
+			</script>
+		</div>
+		<div>I should be surrounded by diamonds after a few seconds.
+			<script>
+				// Now you're thinking with async! Runs immediately. No event.
+				(async (e = me()) => { // Special case where we can save element right away.
+					e.styles({"transition":"all 2s", "color":"#fff"})
+
+					// New element!
+					var e2 = me(createElement("div"))
+					e2.innerText = "💎💎💎"
+					e.prepend(e2)
+					e2.styles({"transition":"all 2s", "opacity":"0"})
+					await sleep(1000)
+					e2.styles({"opacity":"1"})
+					await sleep(2000)
+
+					// New element!
+					var e2 = me(createElement("div"))
+					e2.styles({"transition":"all 2s", "opacity":"0"})
+					e2.innerText = "💎💎💎"
+					e.appendChild(e2)
+					await sleep(1000)
+					e2.styles({"opacity":"1"})
+				})()
+			</script>
+		</div>
+		<!-- Event examples -->
+		<div thick>📬 I close from a child button event.
+			<script>
+				me().on("close", async event => { me(event).fadeOut() }) // Recieve "close" event.
+			</script>
+			<button  class="close">✉️ Send "close"
+				<script>
+					me().on("click", event => { me(event).disable(); me(event).send("close") })
+				</script>
+			</button>
+		</div>
+		<div thick>📭 I stay open because of <strong>halt()</strong>
+			<script>
+				me().on("close", event => {  me(event).fadeOut() }) // I will never recieve "close" event because of halt()
+			</script>
+			<div thick>📬 I close dramatically from a child button <strong>async</strong> event
+				<script>
+					me().on("close", async event => {
+						let e = me(event) // Save element because event.currentTarget will be lost after await.
+						e.halt(event) // Event stops here.
+						e.disable() // Prevent user from clicking button many times.
+						e.styles({"transition":"all 0.5s", "background":"red"})
+						await sleep(500)
+						e.styles({"background":"white"})
+						await sleep(500)
+						e.styles({"background":"red"})
+						await sleep(500)
+						e.styles({"background":"white"})
+						e.fadeOut()
+					})
+				</script>
+				<button class="close">✉️ Send "close"
+					<script>
+						me().on("click", event => { me(event).disable(); me(event).send("close") }) // Use disable() to stop clicking more than once.
+					</script>
+				</button>
+			</div>
+		</div>
+		<!-- Scoping and 3D -->
+		<div class="card">
+			3D Card
+			<div></div>
+			<script>
+				me().on('mouseenter', (ev) => {
+					let e = me(ev)
+					e.bounds = e.getBoundingClientRect()
+					e.on('mousemove', e.rotateToMouse)
+				})
+				me().on('mouseleave', (ev) => {
+					let e = me(ev)
+					e.off('mousemove', e.rotateToMouse)
+					e.style.transform = ''
+					e.style.background = ''
+				})
+				me().rotateToMouse = (ev) => {
+					let e = me(ev)
+					let mouseX = ev.clientX
+					let mouseY = ev.clientY
+					let leftX = mouseX - e.bounds.x
+					let topY = mouseY - e.bounds.y
+					let center = { x: leftX - e.bounds.width / 2, y: topY - e.bounds.height / 2 }
+					let distance = Math.sqrt(center.x**2 + center.y**2)
+					e.style.transform = `scale3d(1.07, 1.07, 1.0) rotate3d(${center.y / 100}, ${-center.x / 100}, 0, ${Math.log(distance)* 1}0deg)`
+					me('div', e).style.backgroundImage = `radial-gradient(circle at ${center.x * 2 + e.bounds.width/2}px ${center.y * 2 + e.bounds.height/2}px, #ffffff55, #0000000f)`
+				}
+			</script>
+		</div>
+		<!-- Try out window.onload predictable call chain -->
+		<script>onloadAdd(()=>{ console.log("Hello from Surreal onloadAdd()") })</script>
+		<script>onloadAdd(()=>{ console.log("I added to onload without clobbering the previous function") })</script>
+		<!-- Check the code! -->
+		<button class="blue">😺 Visit the source code for this page.
+			<script>
+				me().on("click", ev => { window.location.href ="https://github.com/gnat/surreal/blob/main/example.html" })
+			</script>
+		</button>
+	</body>
+	<style>
+		/* stylesheet.css */
+		html,body,p,ol,ul,li,dl,dt,dd,blockquote,figure,fieldset,legend,textarea,pre,iframe,hr,h1,h2,h3,h4,h5,h6,label {
+			margin: 0;
+			padding: 0;
+			font-family: sans-serif;
+		}
+		button,input,select,textarea {
+			margin: 0;
+			font: inherit;
+		}
+		html {
+			font-size: 10px; /* 1.8 rem = 18px */
+			text-size-adjust: none; /* Fixes chrome on mobile. */
+			-webkit-text-size-adjust: none; /* Fixes safari on mobile. */
+			-moz-text-size-adjust: none; /* Firefox works fine, but for consistency. */
+			background: #adadad;
+		}
+		/* Custom for showcase. */
+		body {
+			font-family: system-ui, sans-serif;
+			font-size: 2rem;
+			padding: 1rem;
+			background: #adadad;
+			color: #ccc;
+			perspective: 1500px;
+		}
+		.active {
+			background: hsl(345deg 100% 47%);
+			transition: background 3s;
+		}
+		.inactive {
+			background: grey;
+			transition: background 3s;
+		}
+		body > div {
+			color: #222;
+			margin: 1rem;
+			padding: 1rem;
+			border-radius: 1rem;
+		}
+		body div[thick] {
+			color: #222;
+			margin: 2rem;
+			padding: 3rem;
+			border-radius: 1rem;
+			background: #eee;
+		}
+		body div[thick] div[thick] {
+			background: #ccc;
+		}
+		button {
+			cursor: pointer;
+			color: #fff;
+			padding: 2rem 3rem;
+			margin: 2rem;
+			border: none;
+			background: hsl(262deg 86% 47%);
+			border-bottom: 0.5rem solid hsl(262deg 86% 28%);
+			border-radius: 12px;
+			text-shadow: 0 2px #222222AA;
+		}
+		button:active {
+			transform: translateY(0.2rem);
+		}
+		button.blue {
+			background: hsl(200deg 100% 47%);
+			border: none;
+			border-bottom: 0.5rem solid hsl(200deg 100% 28%);
+		}
+		button.invisible {
+			opacity: 0.2;	
+			background: hsl(147, 60%, 50%);
+			border-bottom: 0.5rem solid hsl(147 80% 28%);
+		}
+		button.close {
+			background: hsl(345deg 90% 40%);
+			border-bottom: 0.5rem solid hsl(345deg 100% 28%);
+			border-radius: 12px;
+		}
+		button.close:disabled {
+			color: #aaa;
+			background: hsl(345deg 0% 30%);
+			border-bottom: 0.5rem solid hsl(345deg 0% 18%);
+			transform: translateY(0.2rem);
+		}
+		.card {
+			position: relative;
+			width: 300px;
+			height: 400px;
+			padding: 1em;
+			margin: 2em auto;
+			font-weight: bold;
+			text-align: right;
+			text-shadow: 0 0 4px #000;
+			color: #ddd;
+			box-shadow: 0 1px 5px #00000099;
+			border-radius: 10px;
+			background: #999 center;
+			background-size: cover;
+			cursor: pointer;
+			transition-duration: 300ms;
+			transition-property: transform, box-shadow;
+			transition-timing-function: ease-out;
+			transform: rotate3d(0);
+		}
+		.card :hover {
+			transition-duration: 150ms;
+			box-shadow: 0 5px 20px 5px #00000044;
+		}
+		.card > div {
+			position: absolute;
+			width: 100%;
+			height: 100%;
+			left: 0;
+			top: 0;
+			border-radius: 10px;
+			background-image: radial-gradient(circle at 90% -20%, #ffffff33, #0000000f);
+		}
+	</style>
+</html>
