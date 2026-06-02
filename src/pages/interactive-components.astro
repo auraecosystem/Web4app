@@ -1,0 +1,15 @@
+---
+// Example: hydrating framework components in the browser.
+import InteractiveButton from '../components/InteractiveButton.jsx';
+import InteractiveCounter from '../components/InteractiveCounter.jsx';
+import InteractiveModal from '../components/InteractiveModal.svelte';
+---
+<!-- This component's JS will begin importing when the page loads -->
+<InteractiveButton client:load />
+
+<!-- This component's JS will not be sent to the client until
+the user scrolls down and the component is visible on the page -->
+<InteractiveCounter client:visible />
+
+<!-- This component won't render on the server, but will render on the client when the page loads -->
+<InteractiveModal client:only="svelte" />
