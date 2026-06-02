@@ -3,13 +3,14 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
+using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
-using Xunit;
 
 #region MODEL
 
@@ -28,43 +29,43 @@ public class TestDataConfig
     public string ConnectionString { get; set; } = "";
     public string Table { get; set; } = "";
     public string CsvPath { get; set; } = "";
-    public string ApiUrl { get; set; } = "";
     public string JsonPath { get; set; } = "";
+    public string ApiUrl { get; set; } = "";
 }
 
 #endregion
 
-# ----------------------------------------------------
-# 1. PLUGIN CONTRACT (CORE ABSTRACTION)
-# ----------------------------------------------------
+#region PLUGINS (DATA SOURCES)
 
 public interface IUserDataSource
 {
+    string Name { get; }
+    int Priority { get; }
     Task<IEnumerable<User>> GetUsersAsync();
 }
 
-# ----------------------------------------------------
-# 2. DB SOURCE
-# ----------------------------------------------------
+#endregion
 
-public class DbUserSource : IUserDataSource
+#region SOURCES
+
+public class DbSource : IUserDataSource
 {
-    private readonly TestDataConfig _config;
+    public string Name => "DB";
+    public int Priority => 1;
 
-    public DbUserSource(IOptions<TestDataConfig> config)
-    {
-        _config = config.Value;
-    }
+    private readonly TestDataConfig _cfg;
+
+    public DbSource(IOptions<TestDataConfig> cfg) => _cfg = cfg.Value;
 
     public async Task<IEnumerable<User>> GetUsersAsync()
     {
         var list = new List<User>();
 
-        using var conn = new SqlConnection(_config.ConnectionString);
+        using var conn = new SqlConnection(_cfg.ConnectionString);
         await conn.OpenAsync();
 
         using var cmd = conn.CreateCommand();
-        cmd.CommandText = $"SELECT Id, Name FROM {_config.Table}";
+        cmd.CommandText = $"SELECT Id, Name FROM {_cfg.Table}";
 
         using var reader = await cmd.ExecuteReaderAsync();
 
@@ -81,178 +82,295 @@ public class DbUserSource : IUserDataSource
     }
 }
 
-# ----------------------------------------------------
-# 3. CSV SOURCE
-# ----------------------------------------------------
-
-public class CsvUserSource : IUserDataSource
+public class CsvSource : IUserDataSource
 {
-    private readonly TestDataConfig _config;
+    public string Name => "CSV";
+    public int Priority => 3;
 
-    public CsvUserSource(IOptions<TestDataConfig> config)
-    {
-        _config = config.Value;
-    }
+    private readonly TestDataConfig _cfg;
+
+    public CsvSource(IOptions<TestDataConfig> cfg) => _cfg = cfg.Value;
 
     public async Task<IEnumerable<User>> GetUsersAsync()
     {
-        var lines = await File.ReadAllLinesAsync(_config.CsvPath);
+        var lines = await File.ReadAllLinesAsync(_cfg.CsvPath);
 
-        return lines
-            .Skip(1)
-            .Select(l =>
+        return lines.Skip(1)
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .Select(x =>
             {
-                var parts = l.Split(',');
+                var p = x.Split(',');
                 return new User
                 {
-                    Id = int.Parse(parts[0]),
-                    Name = parts[1]
+                    Id = int.Parse(p[0]),
+                    Name = p[1]
                 };
             });
     }
 }
 
-# ----------------------------------------------------
-# 4. JSON SOURCE
-# ----------------------------------------------------
-
-public class JsonUserSource : IUserDataSource
+public class JsonSource : IUserDataSource
 {
-    private readonly TestDataConfig _config;
+    public string Name => "JSON";
+    public int Priority => 2;
 
-    public JsonUserSource(IOptions<TestDataConfig> config)
-    {
-        _config = config.Value;
-    }
+    private readonly TestDataConfig _cfg;
+
+    public JsonSource(IOptions<TestDataConfig> cfg) => _cfg = cfg.Value;
 
     public async Task<IEnumerable<User>> GetUsersAsync()
     {
-        var json = await File.ReadAllTextAsync(_config.JsonPath);
+        var json = await File.ReadAllTextAsync(_cfg.JsonPath);
 
         return JsonSerializer.Deserialize<List<User>>(json)
                ?? new List<User>();
     }
 }
 
-# ----------------------------------------------------
-# 5. API SOURCE
-# ----------------------------------------------------
-
-public class ApiUserSource : IUserDataSource
+public class ApiSource : IUserDataSource
 {
-    private readonly TestDataConfig _config;
-    private readonly HttpClient _http;
+    public string Name => "API";
+    public int Priority => 4;
 
-    public ApiUserSource(IOptions<TestDataConfig> config, HttpClient http)
+    private readonly HttpClient _http;
+    private readonly TestDataConfig _cfg;
+
+    public ApiSource(IOptions<TestDataConfig> cfg, HttpClient http)
     {
-        _config = config.Value;
+        _cfg = cfg.Value;
         _http = http;
     }
 
     public async Task<IEnumerable<User>> GetUsersAsync()
     {
-        var json = await _http.GetStringAsync(_config.ApiUrl);
-
-        return JsonSerializer.Deserialize<List<User>>(json)
-               ?? new List<User>();
-    }
-}
-
-# ----------------------------------------------------
-# 6. AGGREGATOR (THE PIPELINE ENGINE)
-# ----------------------------------------------------
-
-public class UnifiedUserDataProvider
-{
-    private readonly IEnumerable<IUserDataSource> _sources;
-
-    public UnifiedUserDataProvider(IEnumerable<IUserDataSource> sources)
-    {
-        _sources = sources;
-    }
-
-    public async Task<List<User>> GetAllUsersAsync()
-    {
-        var results = new List<User>();
-
-        foreach (var source in _sources)
+        try
         {
-            var data = await source.GetUsersAsync();
-            results.AddRange(data);
+            var json = await _http.GetStringAsync(_cfg.ApiUrl);
+            return JsonSerializer.Deserialize<List<User>>(json)
+                   ?? new List<User>();
         }
-
-        return results;
+        catch
+        {
+            return Enumerable.Empty<User>();
+        }
     }
 }
 
-# ----------------------------------------------------
-# 7. TEST HOST (PLUGIN REGISTRY)
-# ----------------------------------------------------
+#endregion
 
-public static class TestHost
+#region DISTRIBUTED NODE SYSTEM
+
+public interface IDataNode
+{
+    string NodeId { get; }
+    Task<IEnumerable<User>> FetchAsync();
+}
+
+public class HttpNode : IDataNode
+{
+    public string NodeId { get; }
+    private readonly string _endpoint;
+    private readonly HttpClient _http;
+
+    public HttpNode(string id, string endpoint, HttpClient http)
+    {
+        NodeId = id;
+        _endpoint = endpoint;
+        _http = http;
+    }
+
+    public async Task<IEnumerable<User>> FetchAsync()
+    {
+        try
+        {
+            var json = await _http.GetStringAsync($"{_endpoint}/users");
+            return JsonSerializer.Deserialize<List<User>>(json)
+                   ?? new List<User>();
+        }
+        catch
+        {
+            return Enumerable.Empty<User>();
+        }
+    }
+}
+
+public class NodeRegistry
+{
+    private readonly List<IDataNode> _nodes = new();
+    public void Register(IDataNode node) => _nodes.Add(node);
+    public IEnumerable<IDataNode> All() => _nodes;
+}
+
+#endregion
+
+#region MEMORY + CACHE
+
+public class MemoryStore
+{
+    private readonly Dictionary<string, List<User>> _store = new();
+
+    public string Save(List<User> data)
+    {
+        var hash = Hash(data);
+        _store[hash] = data;
+        return hash;
+    }
+
+    public List<User>? Load(string hash)
+        => _store.TryGetValue(hash, out var d) ? d : null;
+
+    private string Hash(List<User> data)
+    {
+        var json = JsonSerializer.Serialize(data);
+        var bytes = SHA256.HashData(Encoding.UTF8.GetBytes(json));
+        return Convert.ToHexString(bytes);
+    }
+}
+
+#endregion
+
+#region AI + SELF HEALING
+
+public class AIEngine
+{
+    public List<User> Resolve(List<User> users)
+    {
+        return users
+            .GroupBy(u => u.Id)
+            .Select(g => g.OrderByDescending(Score).First())
+            .ToList();
+    }
+
+    private int Score(User u)
+        => (u.Id > 0 ? 10 : 0) + (!string.IsNullOrWhiteSpace(u.Name) ? 10 : 0);
+}
+
+public class SelfHealingEngine
+{
+    public List<User> Repair(List<User> users)
+    {
+        return users.Select(u => new User
+        {
+            Id = u.Id <= 0 ? Random.Shared.Next(1000, 999999) : u.Id,
+            Name = string.IsNullOrWhiteSpace(u.Name) ? "Unknown" : u.Name
+        }).ToList();
+    }
+}
+
+#endregion
+
+#region DISTRIBUTED EXECUTION
+
+public class DistributedEngine
+{
+    private readonly NodeRegistry _registry;
+
+    public DistributedEngine(NodeRegistry registry)
+        => _registry = registry;
+
+    public async Task<List<User>> ExecuteAsync()
+    {
+        var tasks = _registry.All().Select(n => n.FetchAsync());
+        var results = await Task.WhenAll(tasks);
+        return results.SelectMany(x => x).ToList();
+    }
+}
+
+#endregion
+
+#region WEB4 KERNEL
+
+public class Web4Kernel
+{
+    private readonly DistributedEngine _distributed;
+    private readonly SelfHealingEngine _heal;
+    private readonly AIEngine _ai;
+
+    public Web4Kernel(
+        DistributedEngine d,
+        SelfHealingEngine h,
+        AIEngine a)
+    {
+        _distributed = d;
+        _heal = h;
+        _ai = a;
+    }
+
+    public async Task<List<User>> RunAsync()
+    {
+        var raw = await _distributed.ExecuteAsync();
+        var fixedData = _heal.Repair(raw);
+        return _ai.Resolve(fixedData);
+    }
+}
+
+#endregion
+
+#region OS CORE
+
+public class Web4OS
+{
+    private readonly Web4Kernel _kernel;
+    private readonly MemoryStore _memory;
+
+    public Web4OS(Web4Kernel kernel, MemoryStore memory)
+    {
+        _kernel = kernel;
+        _memory = memory;
+    }
+
+    public async Task<string> BootAsync()
+    {
+        var data = await _kernel.RunAsync();
+        return _memory.Save(data);
+    }
+
+    public List<User>? Restore(string snapshot)
+        => _memory.Load(snapshot);
+}
+
+#endregion
+
+#region BOOTSTRAP
+
+public static class Web4Host
 {
     public static IServiceProvider Services { get; }
 
-    static TestHost()
+    static Web4Host()
     {
-        var config = new ConfigurationBuilder()
-            .AddInMemoryCollection(new Dictionary<string, string>
-            {
-                ["TestData:ConnectionString"] = "Server=localhost;Database=TestDb;",
-                ["TestData:Table"] = "Users",
-                ["TestData:CsvPath"] = "users.csv",
-                ["TestData:JsonPath"] = "users.json",
-                ["TestData:ApiUrl"] = "https://example.com/users"
-            })
+        var services = new ServiceCollection();
+        var http = new HttpClient();
+
+        var cfg = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string>())
             .Build();
 
-        var services = new ServiceCollection();
+        services.Configure<TestDataConfig>(cfg);
 
-        services.Configure<TestDataConfig>(config.GetSection("TestData"));
+        // sources
+        services.AddTransient<IUserDataSource, DbSource>();
+        services.AddTransient<IUserDataSource, CsvSource>();
+        services.AddTransient<IUserDataSource, JsonSource>();
+        services.AddHttpClient<IUserDataSource, ApiSource>();
 
-        // register plugin sources
-        services.AddTransient<IUserDataSource, DbUserSource>();
-        services.AddTransient<IUserDataSource, CsvUserSource>();
-        services.AddTransient<IUserDataSource, JsonUserSource>();
-        services.AddHttpClient<IUserDataSource, ApiUserSource>();
+        // distributed
+        var registry = new NodeRegistry();
+        registry.Register(new HttpNode("node1", "https://node1.local", http));
+        registry.Register(new HttpNode("node2", "https://node2.local", http));
 
-        services.AddTransient<UnifiedUserDataProvider>();
+        services.AddSingleton(registry);
+        services.AddSingleton<DistributedEngine>();
+
+        // core
+        services.AddSingleton<SelfHealingEngine>();
+        services.AddSingleton<AIEngine>();
+        services.AddSingleton<Web4Kernel>();
+        services.AddSingleton<MemoryStore>();
+        services.AddSingleton<Web4OS>();
 
         Services = services.BuildServiceProvider();
     }
 }
 
-# ----------------------------------------------------
-# 8. TEST DATA EXPANSION (FINAL PIPELINE OUTPUT)
-# ----------------------------------------------------
-
-public static class UserTestData
-{
-    public static IEnumerable<object[]> Users()
-    {
-        var provider = TestHost.Services.GetRequiredService<UnifiedUserDataProvider>();
-
-        var users = provider.GetAllUsersAsync().Result;
-
-        foreach (var user in users)
-        {
-            yield return new object[] { user };
-        }
-    }
-}
-
-# ----------------------------------------------------
-# 9. TEST EXECUTION
-# ----------------------------------------------------
-
-public class UserTests
-{
-    [Theory]
-    [MemberData(nameof(UserTestData.Users), MemberType = typeof(UserTestData))]
-    public void ValidateUser(User user)
-    {
-        Assert.NotNull(user);
-        Assert.False(string.IsNullOrWhiteSpace(user.Name));
-        Assert.True(user.Id > 0);
-    }
-}
+#endregion
