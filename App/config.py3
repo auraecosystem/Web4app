@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: MPL-2.0
 // Copyright ijl (2021-2026)
-
 fn main() {
     let python_config = pyo3_build_config::get();
 
