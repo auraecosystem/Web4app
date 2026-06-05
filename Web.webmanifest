@@ -1,0 +1,32 @@
+{
+  "id": "/?utm_source=web4_app",
+  "name": "Web4 cloud Integration App",
+  "short_name": "Web4cloud",
+  "description": "Decentralized web interface integrated with Discord theme and authentication.",
+  "start_url": "/?utm_source=web4_app",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#23272A",
+  "theme_color": "#5865F2",
+  "categories": ["social", "utilities"],
+  "icons": [
+    {
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/maskable-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
